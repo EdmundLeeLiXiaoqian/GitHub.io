@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh_CN" style="background:none;">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- 关键兼容声明 -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>民生长沙权益兑换</title>
+<style>
+/* 原有样式保留 */
+body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f5f5f5; margin: 0; }
+.container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 500px; }
+input[type="url"] { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px; }
+input:invalid { border-color: #ff6b6b; }
+button { background-color: #4CAF50; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; transition: background-color 0.3s; }
+button:hover { background-color: #45a049; }
+.error { color: #ff6b6b; margin-top: 8px; display: none; }
+/* 新增移动端提示 */
+#deviceTip { display: none; margin-top: 15px; padding: 12px; background: #fff8e1; border-radius: 4px; color: #e65100; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>网址跳转工具</h2>
+    <form id="urlForm">
+        <input type="url" id="urlInput" 
+               placeholder="输入完整网址（如：https://www.cmbc.com.cn）" 
+               required>
+        <div id="errorMsg" class="error">请输入有效的网址（需包含协议如http://）</div>
+        <button type="submit">跳转到网址</button>
+    </form>
+    <!-- 设备提示区域 -->
+    <div id="deviceTip"></div>
+</div>
+
+<script>
+// 设备检测函数
+function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function isAndroid() { return /Android/i.test(navigator.userAgent); }
+
+const form = document.getElementById('urlForm');
+const urlInput = document.getElementById('urlInput');
+const errorMsg = document.getElementById('errorMsg');
+const deviceTip = document.getElementById('deviceTip');
+
+// 显示设备提示（移动设备专用）
+if (isIOS() || isAndroid()) {
+    deviceTip.style.display = 'block';
+    deviceTip.innerHTML = isIOS() ? 
+        '🍎 苹果设备提示：点击上方按钮直接跳转' : 
+        '🤖 安卓设备：正在启用安全跳转协议';
+}
+
+// 表单提交处理（全平台兼容）
+form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    if (!urlInput.checkValidity()) {
+        errorMsg.textContent = urlInput.validationMessage || '请输入有效网址';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    let url = urlInput.value.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    
+    // 特殊设备处理
+    if (isIOS()) {
+        // iOS方案：创建隐藏iframe触发跳转[1,3](@ref)
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        setTimeout(() => { iframe.remove(); }, 3000);
+    } else {
+        // 通用跳转方案（含Android）
+        window.location.href = url;
+    }
+});
+
+// 备用跳转方案（防止iOS拦截）
+function fallbackRedirect(url) {
+    deviceTip.innerHTML = `跳转被拦截，请<a href=" " style="color:#d32f2f;text-decoration:underline">手动点击此处</a >`;
+    deviceTip.style.display = 'block';
+}
+
+// 监听跳转失败事件
+window.addEventListener('error', (e) => {
+    if (e.message.includes('Blocked attempt')) {
+        const url = urlInput.value;
+        if (url) fallbackRedirect(url);
+    }
+});
+</script>
+</body>
+</html>
